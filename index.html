@@ -39,7 +39,7 @@
       <section id="welcome" class="welcome">
         <div class="welcome-emoji" aria-hidden="true">🏫</div>
         <h2>Welcome!</h2>
-        <p class="muted">Add your first class, then add students and start taking attendance.<br />Everything saves automatically on this device.</p>
+        <p class="muted">Add your first class, then add students and start taking attendance.<br />Your data saves automatically and syncs across devices.</p>
       </section>
 
       <section id="classPanel" hidden>
@@ -123,6 +123,15 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
+  <!-- Supabase powers cross-device syncing. The anon/publishable key is safe for browser use. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    window.ATTENDANCE_CONFIG = {
+      supabaseUrl: 'https://qjjlxblgxacrldyzuiqe.supabase.co',
+      supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqamx4YmxneGFjcrlkeXp1aXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3OTM5NTYsImV4cCI6MjEwNTM2OTk1Nn0.drafi3GyOOHPp3s3wWyB_bhukv30xGFlx8xlzQv4tSY',
+      supabaseTable: 'attendance_state'
+    };
+  </script>
   <script src="app.js"></script>
 </body>
 </html>
