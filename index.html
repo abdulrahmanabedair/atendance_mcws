@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Saturday School Attendance</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">📋</span>
+      <div>
+        <h1>MCWS Saturday School</h1>
+        <p class="muted">Attendance</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="exportBtn" class="ghost small" type="button">Export backup</button>
+      <button id="importBtn" class="ghost small" type="button">Import backup</button>
+      <input id="importInput" type="file" accept=".json,application/json" hidden />
+      <button id="resetBtn" class="ghost small danger" type="button">Reset all</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="card sidebar">
+      <h2>Classes</h2>
+      <form id="addClassForm" class="inline-form" autocomplete="off">
+        <input id="classInput" type="text" placeholder="New class name" maxlength="60" aria-label="New class name" required />
+        <button type="submit">Add</button>
+      </form>
+      <ul id="classList" class="class-list"></ul>
+      <p id="noClasses" class="muted small-note">No classes yet.</p>
+    </aside>
+
+    <main class="card main">
+      <section id="welcome" class="welcome">
+        <div class="welcome-emoji" aria-hidden="true">🏫</div>
+        <h2>Welcome!</h2>
+        <p class="muted">Add your first class, then add students and start taking attendance.<br />Everything saves automatically on this device.</p>
+      </section>
+
+      <section id="classPanel" hidden>
+        <div class="class-head">
+          <h2 id="className"></h2>
+          <div class="row-actions">
+            <button id="renameClassBtn" class="ghost small" type="button">Rename</button>
+            <button id="deleteClassBtn" class="ghost small danger" type="button">Delete class</button>
+          </div>
+        </div>
+
+        <div id="tabs" class="tabs" role="tablist">
+          <button type="button" role="tab" data-tab="attendance">Attendance</button>
+          <button type="button" role="tab" data-tab="students">Students <span id="studentCount" class="pill">0</span></button>
+          <button type="button" role="tab" data-tab="history">History</button>
+        </div>
+
+        <!-- Attendance -->
+        <div id="tab-attendance" class="tab-panel" role="tabpanel">
+          <div class="date-bar">
+            <button id="prevWeekBtn" class="ghost icon" type="button" title="Previous week" aria-label="Previous week">‹</button>
+            <input id="dateInput" type="date" aria-label="Attendance date" />
+            <button id="nextWeekBtn" class="ghost icon" type="button" title="Next week" aria-label="Next week">›</button>
+            <button id="todayBtn" class="ghost small" type="button">Today</button>
+            <span id="dateLabel" class="muted date-label"></span>
+          </div>
+
+          <div id="rollToolbar" class="roll-toolbar">
+            <div id="summary" class="summary"></div>
+            <div class="row-actions">
+              <button id="allPresentBtn" class="small" type="button">Mark remaining present</button>
+              <button id="clearDayBtn" class="ghost small danger" type="button">Clear day</button>
+            </div>
+          </div>
+
+          <ul id="rollList" class="roll"></ul>
+
+          <div id="rollEmpty" class="empty-note">
+            <p class="muted">No students in this class yet.</p>
+            <button type="button" data-goto="students">Add students</button>
+          </div>
+        </div>
+
+        <!-- Students -->
+        <div id="tab-students" class="tab-panel" role="tabpanel" hidden>
+          <form id="addStudentForm" class="inline-form" autocomplete="off">
+            <input id="studentInput" type="text" placeholder="Student name" maxlength="80" aria-label="Student name" required />
+            <button type="submit">Add student</button>
+          </form>
+          <ul id="studentList" class="student-list"></ul>
+          <p id="studentsEmpty" class="muted empty-note">No students yet. Type a name above and press Enter.</p>
+        </div>
+
+        <!-- History -->
+        <div id="tab-history" class="tab-panel" role="tabpanel" hidden>
+          <div id="historyContent">
+            <h3>Student totals</h3>
+            <div class="table-wrap">
+              <table class="history-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Student</th>
+                    <th scope="col" class="num">Present</th>
+                    <th scope="col" class="num">Late</th>
+                    <th scope="col" class="num">Absent</th>
+                    <th scope="col" class="num">Excused</th>
+                    <th scope="col" class="num" title="Present + late, out of all sessions that weren't excused">Rate</th>
+                  </tr>
+                </thead>
+                <tbody id="historyBody"></tbody>
+              </table>
+            </div>
+            <h3>Sessions <span id="sessionCount" class="muted"></span></h3>
+            <ul id="sessionList" class="session-list"></ul>
+          </div>
+          <p id="historyEmpty" class="muted empty-note">No attendance has been taken for this class yet.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
