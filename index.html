@@ -8,127 +8,151 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="logo" aria-hidden="true">📋</span>
-      <div>
-        <h1>MCWS Saturday School</h1>
-        <p class="muted">Attendance</p>
+  <div id="authScreen" class="auth-shell">
+    <div class="auth-card card">
+      <div class="auth-top">
+        <span class="logo" aria-hidden="true">📋</span>
+        <h1>MCWS Attendance</h1>
       </div>
-    </div>
-    <div class="top-actions">
-      <button id="exportBtn" class="ghost small" type="button">Export backup</button>
-      <button id="importBtn" class="ghost small" type="button">Import backup</button>
-      <input id="importInput" type="file" accept=".json,application/json" hidden />
-      <button id="resetBtn" class="ghost small danger" type="button">Reset all</button>
-    </div>
-  </header>
-
-  <div class="layout">
-    <aside class="card sidebar">
-      <h2>Classes</h2>
-      <form id="addClassForm" class="inline-form" autocomplete="off">
-        <input id="classInput" type="text" placeholder="New class name" maxlength="60" aria-label="New class name" required />
-        <button type="submit">Add</button>
+      <p class="muted auth-subtitle">Sign in to sync your classes across devices.</p>
+      <form id="authForm" class="auth-form" autocomplete="on">
+        <label>
+          <span>Email</span>
+          <input id="authEmail" type="email" placeholder="you@example.com" required />
+        </label>
+        <label>
+          <span>Password</span>
+          <input id="authPassword" type="password" placeholder="••••••••" required minlength="6" />
+        </label>
+        <div class="auth-actions">
+          <button id="signInBtn" type="submit">Sign in</button>
+          <button id="signUpBtn" type="button" class="ghost">Create account</button>
+        </div>
       </form>
-      <ul id="classList" class="class-list"></ul>
-      <p id="noClasses" class="muted small-note">No classes yet.</p>
-    </aside>
-
-    <main class="card main">
-      <section id="welcome" class="welcome">
-        <div class="welcome-emoji" aria-hidden="true">🏫</div>
-        <h2>Welcome!</h2>
-        <p class="muted">Add your first class, then add students and start taking attendance.<br />Your data saves automatically and syncs across devices.</p>
-      </section>
-
-      <section id="classPanel" hidden>
-        <div class="class-head">
-          <h2 id="className"></h2>
-          <div class="row-actions">
-            <button id="renameClassBtn" class="ghost small" type="button">Rename</button>
-            <button id="deleteClassBtn" class="ghost small danger" type="button">Delete class</button>
-          </div>
-        </div>
-
-        <div id="tabs" class="tabs" role="tablist">
-          <button type="button" role="tab" data-tab="attendance">Attendance</button>
-          <button type="button" role="tab" data-tab="students">Students <span id="studentCount" class="pill">0</span></button>
-          <button type="button" role="tab" data-tab="history">History</button>
-        </div>
-
-        <!-- Attendance -->
-        <div id="tab-attendance" class="tab-panel" role="tabpanel">
-          <div class="date-bar">
-            <button id="prevWeekBtn" class="ghost icon" type="button" title="Previous week" aria-label="Previous week">‹</button>
-            <input id="dateInput" type="date" aria-label="Attendance date" />
-            <button id="nextWeekBtn" class="ghost icon" type="button" title="Next week" aria-label="Next week">›</button>
-            <button id="todayBtn" class="ghost small" type="button">Today</button>
-            <span id="dateLabel" class="muted date-label"></span>
-          </div>
-
-          <div id="rollToolbar" class="roll-toolbar">
-            <div id="summary" class="summary"></div>
-            <div class="row-actions">
-              <button id="allPresentBtn" class="small" type="button">Mark remaining present</button>
-              <button id="clearDayBtn" class="ghost small danger" type="button">Clear day</button>
-            </div>
-          </div>
-
-          <ul id="rollList" class="roll"></ul>
-
-          <div id="rollEmpty" class="empty-note">
-            <p class="muted">No students in this class yet.</p>
-            <button type="button" data-goto="students">Add students</button>
-          </div>
-        </div>
-
-        <!-- Students -->
-        <div id="tab-students" class="tab-panel" role="tabpanel" hidden>
-          <form id="addStudentForm" class="inline-form" autocomplete="off">
-            <input id="studentInput" type="text" placeholder="Student name" maxlength="80" aria-label="Student name" required />
-            <button type="submit">Add student</button>
-          </form>
-          <ul id="studentList" class="student-list"></ul>
-          <p id="studentsEmpty" class="muted empty-note">No students yet. Type a name above and press Enter.</p>
-        </div>
-
-        <!-- History -->
-        <div id="tab-history" class="tab-panel" role="tabpanel" hidden>
-          <div id="historyContent">
-            <h3>Student totals</h3>
-            <div class="table-wrap">
-              <table class="history-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Student</th>
-                    <th scope="col" class="num">Present</th>
-                    <th scope="col" class="num">Late</th>
-                    <th scope="col" class="num">Absent</th>
-                    <th scope="col" class="num">Excused</th>
-                    <th scope="col" class="num" title="Present + late, out of all sessions that weren't excused">Rate</th>
-                  </tr>
-                </thead>
-                <tbody id="historyBody"></tbody>
-              </table>
-            </div>
-            <h3>Sessions <span id="sessionCount" class="muted"></span></h3>
-            <ul id="sessionList" class="session-list"></ul>
-          </div>
-          <p id="historyEmpty" class="muted empty-note">No attendance has been taken for this class yet.</p>
-        </div>
-      </section>
-    </main>
+      <p id="authStatus" class="auth-status" aria-live="polite"></p>
+    </div>
   </div>
 
-  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <div id="appScreen" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">📋</span>
+        <div>
+          <h1>MCWS Saturday School</h1>
+          <p class="muted">Attendance</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="logoutBtn" class="ghost small" type="button">Log out</button>
+        <button id="exportBtn" class="ghost small" type="button">Export backup</button>
+        <button id="importBtn" class="ghost small" type="button">Import backup</button>
+        <input id="importInput" type="file" accept=".json,application/json" hidden />
+        <button id="resetBtn" class="ghost small danger" type="button">Reset all</button>
+      </div>
+    </header>
 
-  <!-- Supabase powers cross-device syncing. The anon/publishable key is safe for browser use. -->
+    <div class="layout">
+      <aside class="card sidebar">
+        <h2>Classes</h2>
+        <form id="addClassForm" class="inline-form" autocomplete="off">
+          <input id="classInput" type="text" placeholder="New class name" maxlength="60" aria-label="New class name" required />
+          <button type="submit">Add</button>
+        </form>
+        <ul id="classList" class="class-list"></ul>
+        <p id="noClasses" class="muted small-note">No classes yet.</p>
+      </aside>
+
+      <main class="card main">
+        <section id="welcome" class="welcome">
+          <div class="welcome-emoji" aria-hidden="true">🏫</div>
+          <h2>Welcome!</h2>
+          <p class="muted">Add your first class, then add students and start taking attendance.<br />Your data saves automatically and syncs across devices.</p>
+        </section>
+
+        <section id="classPanel" hidden>
+          <div class="class-head">
+            <h2 id="className"></h2>
+            <div class="row-actions">
+              <button id="renameClassBtn" class="ghost small" type="button">Rename</button>
+              <button id="deleteClassBtn" class="ghost small danger" type="button">Delete class</button>
+            </div>
+          </div>
+
+          <div id="tabs" class="tabs" role="tablist">
+            <button type="button" role="tab" data-tab="attendance">Attendance</button>
+            <button type="button" role="tab" data-tab="students">Students <span id="studentCount" class="pill">0</span></button>
+            <button type="button" role="tab" data-tab="history">History</button>
+          </div>
+
+          <div id="tab-attendance" class="tab-panel" role="tabpanel">
+            <div class="date-bar">
+              <button id="prevWeekBtn" class="ghost icon" type="button" title="Previous week" aria-label="Previous week">‹</button>
+              <input id="dateInput" type="date" aria-label="Attendance date" />
+              <button id="nextWeekBtn" class="ghost icon" type="button" title="Next week" aria-label="Next week">›</button>
+              <button id="todayBtn" class="ghost small" type="button">Today</button>
+              <span id="dateLabel" class="muted date-label"></span>
+            </div>
+
+            <div id="rollToolbar" class="roll-toolbar">
+              <div id="summary" class="summary"></div>
+              <div class="row-actions">
+                <button id="allPresentBtn" class="small" type="button">Mark remaining present</button>
+                <button id="clearDayBtn" class="ghost small danger" type="button">Clear day</button>
+              </div>
+            </div>
+
+            <ul id="rollList" class="roll"></ul>
+
+            <div id="rollEmpty" class="empty-note">
+              <p class="muted">No students in this class yet.</p>
+              <button type="button" data-goto="students">Add students</button>
+            </div>
+          </div>
+
+          <div id="tab-students" class="tab-panel" role="tabpanel" hidden>
+            <form id="addStudentForm" class="inline-form" autocomplete="off">
+              <input id="studentInput" type="text" placeholder="Student name" maxlength="80" aria-label="Student name" required />
+              <button type="submit">Add student</button>
+            </form>
+            <ul id="studentList" class="student-list"></ul>
+            <p id="studentsEmpty" class="muted empty-note">No students yet. Type a name above and press Enter.</p>
+          </div>
+
+          <div id="tab-history" class="tab-panel" role="tabpanel" hidden>
+            <div id="historyContent">
+              <h3>Student totals</h3>
+              <div class="table-wrap">
+                <table class="history-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Student</th>
+                      <th scope="col" class="num">Present</th>
+                      <th scope="col" class="num">Late</th>
+                      <th scope="col" class="num">Absent</th>
+                      <th scope="col" class="num">Excused</th>
+                      <th scope="col" class="num" title="Present + late, out of all sessions that weren't excused">Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody id="historyBody"></tbody>
+                </table>
+              </div>
+              <h3>Sessions <span id="sessionCount" class="muted"></span></h3>
+              <ul id="sessionList" class="session-list"></ul>
+            </div>
+            <p id="historyEmpty" class="muted empty-note">No attendance has been taken for this class yet.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     window.ATTENDANCE_CONFIG = {
       supabaseUrl: 'https://qjjlxblgxacrldyzuiqe.supabase.co',
-      supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqamx4YmxneGFjcrlkeXp1aXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3OTM5NTYsImV4cCI6MjEwNTM2OTk1Nn0.drafi3GyOOHPp3s3wWyB_bhukv30xGFlx8xlzQv4tSY',
+      supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqamx4YmxneGFjcmxkeXp1aXFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3OTM5NTYsImV4cCI6MjEwNTM2OTk1Nn0.drafi3GyOOHPp3s3wWyB_bhukv30xGFlx8xlzQv4tSY',
       supabaseTable: 'attendance_state'
     };
   </script>
