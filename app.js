@@ -4,6 +4,12 @@
   const STORAGE_KEY = 'saturday.attendance.v1';
   const UI_KEY = 'saturday.ui.v1';
   const TABS = ['attendance', 'students', 'history'];
+  const REMOTE_ID = 'main';
+
+  const APP_CONFIG = window.ATTENDANCE_CONFIG || {};
+  const hasSupabase = Boolean(APP_CONFIG.supabaseUrl && APP_CONFIG.supabaseAnonKey && window.supabase);
+  const supabase = hasSupabase ? window.supabase.createClient(APP_CONFIG.supabaseUrl, APP_CONFIG.supabaseAnonKey) : null;
+  const REMOTE_TABLE = APP_CONFIG.supabaseTable || 'attendance_state';
 
   const STATUSES = [
     { id: 'present', short: 'P', label: 'Present' },
@@ -66,8 +72,8 @@
   }
 
   // ---------- Data ----------
-  // Shape: { classes: [{ id, name, students: [{ id, name }] }], records: { classId: { 'YYYY-MM-DD': { studentId: status } } } }
-  const emptyData = () => ({ classes: [], records: {} });
+  // Shape: { classes: [{ id, name, students: [{ id, name }] }], records: { classId: { 'YYYY-MM-DD': { studentId: status } } }, updatedAt: number }
+  const emptyData = () => ({ classes: [], records: {}, updatedAt: Date.now() });
 
   // Keeps only well-formed data so a corrupt save or bad backup file can't break the app
   function sanitize(raw) {
@@ -97,7 +103,95 @@
         if (Object.keys(clean).length) (records[c.id] ||= {})[day] = clean;
       }
     }
-    return { classes, records };
+
+    const updatedAt =
+      typeof raw.updatedAt === 'number'
+        ? raw.updatedAt
+        : raw.updated_at && !Number.isNaN(Date.parse(raw.updated_at))
+          ? new Date(raw.updated_at).getTime()
+          : Date.now();
+
+    return { classes, records, updatedAt };
+  }
+
+  async function saveToSupabase() {
+    if (!supabase) return;
+    try {
+      const payload = {
+        id: REMOTE_ID,
+        payload: data,
+        updated_at: new Date(data.updatedAt || Date.now()).toISOString(),
+      };
+
+      const { error } = await supabase.from(REMOTE_TABLE).upsert(payload, { onConflict: 'id' });
+      if (error) {
+        console.warn('Supabase save failed:', error);
+      }
+    } catch (error) {
+      console.warn('Supabase save failed:', error);
+    }
+  }
+
+  async function loadFromSupabase() {
+    if (!supabase) return;
+    try {
+      const { data: row, error } = await supabase
+        .from(REMOTE_TABLE)
+        .select('payload, updated_at')
+        .eq('id', REMOTE_ID)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (!row || !row.payload) {
+        await saveToSupabase();
+        return;
+      }
+
+      const remote = sanitize(row.payload);
+      if (!remote) return;
+
+      const remoteTime = row.updated_at ? new Date(row.updated_at).getTime() : remote.updatedAt;
+      const localTime = data.updatedAt || 0;
+
+      if (remoteTime > localTime) {
+        data = remote;
+        store.set(STORAGE_KEY, data);
+        render();
+        toast('Synced from another device.');
+      } else if (localTime > remoteTime) {
+        await saveToSupabase();
+      }
+    } catch (error) {
+      console.warn('Supabase load failed:', error);
+    }
+  }
+
+  function subscribeToRemoteChanges() {
+    if (!supabase) return;
+
+    const channel = supabase.channel('attendance-sync');
+    channel
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: REMOTE_TABLE },
+        (payload) => {
+          if (!payload.new || payload.new.id !== REMOTE_ID) return;
+          const remote = sanitize(payload.new.payload);
+          if (!remote) return;
+
+          const remoteTime = payload.new.updated_at ? new Date(payload.new.updated_at).getTime() : remote.updatedAt;
+          if (remoteTime > (data.updatedAt || 0)) {
+            data = remote;
+            store.set(STORAGE_KEY, data);
+            render();
+            toast('Updated from another device.');
+          }
+        }
+      )
+      .subscribe();
   }
 
   // ---------- State ----------
@@ -108,7 +202,14 @@
   let date = todayStr();
 
   function save() {
-    if (!store.set(STORAGE_KEY, data)) toast('⚠️ Could not save. Browser storage is blocked or full.');
+    data.updatedAt = Date.now();
+    if (!store.set(STORAGE_KEY, data)) {
+      toast('⚠️ Could not save. Browser storage is blocked or full.');
+      return;
+    }
+    if (supabase) {
+      void saveToSupabase();
+    }
   }
   const saveUi = () => store.set(UI_KEY, { selectedId, tab });
   const currentClass = () => data.classes.find((c) => c.id === selectedId) || null;
@@ -426,7 +527,6 @@
     const sid = b.closest('.roll-item').dataset.id;
     const status = b.dataset.status;
     updateMarks(cls, (marks) => {
-      // Clicking the selected status again clears it
       if (marks[sid] === status) delete marks[sid];
       else marks[sid] = status;
     });
@@ -549,7 +649,7 @@
     try {
       imported = sanitize(JSON.parse(await file.text()));
     } catch {
-      /* handled below */
+      // handled below
     }
     if (!imported) {
       toast('That file is not a valid attendance backup.');
@@ -592,5 +692,9 @@
   });
 
   // ---------- Init ----------
+  if (supabase) {
+    void loadFromSupabase();
+    subscribeToRemoteChanges();
+  }
   render();
 })();
